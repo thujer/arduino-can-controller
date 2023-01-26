@@ -1,0 +1,14 @@
+{
+  "name": "CAN Bus via UART Controller Module",
+  "keywords": "can, bus",
+  "description": "Arduino Library for Serial CAN Bus via UART Controller Module",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/Longan-Labs/Serial_CAN_FD_Module.git",
+    "forked": "https://github.com/Longan-Labs/Serial_CAN_FD_Module.git"
+  },
+  "version": "1.0.1",
+  "frameworks": "arduino",
+  "platforms": "espressif"
+}
