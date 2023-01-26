@@ -2,7 +2,7 @@
 
 Arduino library for Serial CAN-FD BUS Module.
 
-[Remaked from Longan Labs module](https://github.com/Longan-Labs/Serial_CAN_FD_Module.git)
+[Forked and remaked from Longan Labs module](https://github.com/Longan-Labs/Serial_CAN_FD_Module.git)
 
 With this library, you can,
 
@@ -12,8 +12,7 @@ With this library, you can,
 4. Receive a CAN FD frame
 
 ## Installation
-
-1. [Download the library](https://github.com/thujer/arduiono-can-controller/archive/refs/heads/main.zip)
+1. [Download the library](https://github.com/thujer/arduino-can-controller/archive/refs/heads/main.zip)
 2. Extract the zip file
 3. In the Arduino IDE, navigate to Sketch > Include Library > Add .ZIP Library
 
@@ -81,6 +80,12 @@ void loop()
 
 If you need a Dev board, plese try,
 
+[Waveshare SN65HVD230 CAN Board](https://www.waveshare.com/sn65hvd230-can-board.htm)
+[Waveshare SN65HVD230 CAN Board on RPIShop](https://rpishop.cz/can-bus/5002-waveshare-sn65hvd230-can-board.html)
+
+[TJA1050 CAN Controller Interface Module BUS Driver Interface Module](https://www.elecbee.com/en-31575-TJA1050-CAN-Controller-Interface-Module-BUS-Driver-Interface-Module?utm_term=&utm_campaign=&utm_source=adwords&utm_medium=ppc&hsa_acc=9958698819&hsa_cam=18719854073&hsa_grp=140153146062&hsa_ad=630917925115&hsa_src=g&hsa_tgt=pla-1186173532455&hsa_kw=&hsa_mt=&hsa_net=adwords&hsa_ver=3)
+
+Probably compatible, but not tested
 - [Grove - CAN BUS Module based on GD32E103](https://www.seeedstudio.com/Grove-CAN-BUS-Module-based-on-GD32E103-p-5456.html)
 
 
@@ -88,8 +93,6 @@ If you need a Dev board, plese try,
 
 ```
 MIT License
-
-Copyright (c) 2018 @ Longan Labs
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -112,4 +115,4 @@ SOFTWARE.
 
 ## Contact us
 
-If you have any question, please feel free to contact [support@longan-labs.cc](support@longan-labs.cc)
+If you have any question, please feel free to contact [tomas@hujer.eu](tomas@hujer.eu)
