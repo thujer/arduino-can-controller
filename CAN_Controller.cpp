@@ -2,6 +2,7 @@
 
 #include "CAN_Controller.h"
 
+
 CAN_Controller::CAN_Controller(HardwareSerial* _uart) {
     uart = _uart;
 }
@@ -12,8 +13,10 @@ CAN_Controller::~CAN_Controller() {
 }
 
 
-void CAN_Controller::init(unsigned long baud) {
-    uart->begin(baud, SERIAL_8N1, -1, -1);
+void CAN_Controller::init(unsigned long baud, int8_t rxPin, int8_t txPin) {
+    Serial.printf("CAN UART init RX=%d, TX=%d, ptr=%p\r\n", rxPin, txPin, uart);
+    uart->begin(baud, SERIAL_8N1, rxPin, txPin);
+    dtaLen = 0;
 }
 
 
@@ -160,7 +163,13 @@ void CAN_Controller::serialProcess() {
 
     while(uart->available())
     {
-        dtaCan[dtaLen++] = uart->read();
+        if(dtaLen < sizeof(dtaCan)) {
+            dtaCan[dtaLen++] = (char) uart->read();
+        } else {
+            Serial.printf("Can buffer overflow %d\r\n", dtaLen);
+
+        }
+        
         //Serial.write(dtaCan[dtaLen-1]);
     }
 }
@@ -181,7 +190,7 @@ void CAN_Controller::dtaProcess(int len, unsigned char *dta){
 int CAN_Controller::read(unsigned long *id, unsigned char *ext, unsigned char *rtr, unsigned char *fdf, unsigned char *len, unsigned char *dta) {
 
     serialProcess();
-    
+
     if(dtaLen == 0)return 0;
     int __len = 0;
     unsigned char __dta[100];

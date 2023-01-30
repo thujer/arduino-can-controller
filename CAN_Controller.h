@@ -3,12 +3,15 @@
 
 #include <Arduino.h>
 
+#define CAN_REC_BUF_SIZE    100
+
 
 class CAN_Controller {
     private:
         HardwareSerial* uart;
-        int dtaLen = 0;
-        unsigned char dtaCan[100];
+        int dtaLen;
+
+        unsigned char dtaCan[CAN_REC_BUF_SIZE];
 
         unsigned long char2long(unsigned char *str);
         void long2char(unsigned long num, unsigned char *str);
@@ -22,10 +25,10 @@ class CAN_Controller {
         void dtaProcess(int len, unsigned char *dta);
 
     public:
-        CAN_Controller(HardwareSerial* uart);
+        CAN_Controller(HardwareSerial* _uart);
         ~CAN_Controller();
 
-        void init(unsigned long baud);
+        void init(unsigned long baud, int8_t rxPin = -1, int8_t txPin = -1);
         void set_speed_fd(unsigned long speed_20, unsigned long speed_fd);
         void set_speed_20(unsigned long speed_20);
         void send(unsigned long id, unsigned char ext, unsigned char rtr, unsigned char fdf, unsigned char len, unsigned char *dta);
