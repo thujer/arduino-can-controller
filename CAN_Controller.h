@@ -2,13 +2,14 @@
 #define __SERIAL_CAN_FD_H__
 
 #include <Arduino.h>
+#include "SerialType.h"
 
 #define CAN_REC_BUF_SIZE    100
 
 
 class CAN_Controller {
     private:
-        HardwareSerial* uart;
+        SERIAL_LIB* uart;
         int dtaLen;
 
         unsigned char dtaCan[CAN_REC_BUF_SIZE];

@@ -46,6 +46,7 @@ unsigned int CAN_Controller::CrcCalculate(unsigned char Byte, unsigned int _CRC)
     return _CRC;
 }
 
+
 unsigned int CAN_Controller::calCRC(unsigned char *str) {
     unsigned int __crc = 0xffff;
     int i=0;
@@ -56,6 +57,7 @@ unsigned int CAN_Controller::calCRC(unsigned char *str) {
     }
     return __crc;
 }
+
 
 unsigned char CAN_Controller::checkCRC(unsigned char *str) {
     unsigned int __crc = calCRC(str);
@@ -159,20 +161,31 @@ void CAN_Controller::checkData() {
     }
 }
 
+
 void CAN_Controller::serialProcess() {
 
-    while(uart->available())
-    {
-        if(dtaLen < sizeof(dtaCan)) {
-            dtaCan[dtaLen++] = (char) uart->read();
-        } else {
-            Serial.printf("Can buffer overflow %d\r\n", dtaLen);
+    if(uart->available()) {
+        Serial.printf("Can serialProcess %d avail\r\n", uart->available());
+    }
 
+    if(dtaLen < sizeof(dtaCan)) {
+        while(uart->available())
+        {
+            if(dtaLen < sizeof(dtaCan)) {
+                dtaCan[dtaLen++] = (char) uart->read();
+            } else {
+                Serial.printf("CAN buffer overflow len=%d (while), cleared\r\n", dtaLen);
+                dtaLen = 0;
+                memset(dtaCan, 0, sizeof(dtaCan));
+            }
         }
-        
-        //Serial.write(dtaCan[dtaLen-1]);
+    } else {
+        dtaLen = 0;
+        memset(dtaCan, 0, sizeof(dtaCan));
+        Serial.printf("CAN buffer overflow len=%d, cleared\r\n", dtaLen);
     }
 }
+
 
 void CAN_Controller::dtaProcess(int len, unsigned char *dta){
 
@@ -191,9 +204,12 @@ int CAN_Controller::read(unsigned long *id, unsigned char *ext, unsigned char *r
 
     serialProcess();
 
-    if(dtaLen == 0)return 0;
+    if(dtaLen == 0) {
+        return 0;
+    }
+
     int __len = 0;
-    unsigned char __dta[100];
+    unsigned char __dta[CAN_REC_BUF_SIZE];
     int i=0;
 
     for(i=0; i<dtaLen; i++)
