@@ -6,7 +6,6 @@
 
 #define CAN_REC_BUF_SIZE    100
 
-
 class CAN_Controller {
     private:
         SERIAL_LIB* uart;

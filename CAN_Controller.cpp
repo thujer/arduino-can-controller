@@ -137,7 +137,7 @@ void CAN_Controller::strProcess(int num) {
 void CAN_Controller::checkData() {
 
     int __len = 0;
-    unsigned char __dta[100];
+    unsigned char __dta[CAN_REC_BUF_SIZE];
     int i=0;
 
     for(i=0; i<dtaLen; i++)
@@ -300,6 +300,3 @@ void CAN_Controller::set_baudrate(unsigned long __baud) {
 }
 
 
-
-
-// END FILE
