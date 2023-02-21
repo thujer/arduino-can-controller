@@ -4,14 +4,17 @@
 #include <Arduino.h>
 #include "SerialType.h"
 
-#define CAN_REC_BUF_SIZE    100
+#define CAN_REC_BUF_SIZE    200
 
 class CAN_Controller {
     private:
         SERIAL_LIB* uart;
-        int dtaLen;
 
-        unsigned char dtaCan[CAN_REC_BUF_SIZE];
+        uint8_t nRecIndexWrite;
+        uint8_t nRecIndexRead;
+        uint8_t nRecInBuf;
+
+        unsigned char recBuffer[CAN_REC_BUF_SIZE];
 
         unsigned long char2long(unsigned char *str);
         void long2char(unsigned long num, unsigned char *str);
@@ -22,9 +25,23 @@ class CAN_Controller {
         void strProcess(int num);
         void checkData();
         void serialProcess();
+        void findNextMessage();
         void dtaProcess(int len, unsigned char *dta);
 
+        void resetRecBuf();
+
     public:
+        /*
+        struct CAN_MESSAGE {
+            unsigned long m_nId;
+            unsigned char m_nExt;
+            unsigned char m_nRtr;
+            unsigned char m_nFdf;
+            unsigned char m_nLen;
+            unsigned char m_nDta;
+        } CAN_MESSAGE;
+        */
+
         CAN_Controller(HardwareSerial* _uart);
         ~CAN_Controller();
 

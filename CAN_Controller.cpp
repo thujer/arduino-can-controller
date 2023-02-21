@@ -5,6 +5,12 @@
 
 CAN_Controller::CAN_Controller(HardwareSerial* _uart) {
     uart = _uart;
+    nRecIndexWrite = 0;
+    memset(recBuffer, 0, sizeof(recBuffer));
+
+    nRecIndexWrite = 0;
+    nRecIndexRead = 0;
+    nRecInBuf = 0;
 }
 
 
@@ -16,7 +22,7 @@ CAN_Controller::~CAN_Controller() {
 void CAN_Controller::init(unsigned long baud, int8_t rxPin, int8_t txPin) {
     Serial.printf("CAN UART init RX=%d, TX=%d, ptr=%p\r\n", rxPin, txPin, uart);
     uart->begin(baud, SERIAL_8N1, rxPin, txPin);
-    dtaLen = 0;
+    nRecIndexWrite = 0;
 }
 
 
@@ -67,7 +73,6 @@ unsigned char CAN_Controller::checkCRC(unsigned char *str) {
     __crc0 |= str[2+str[1]];
 
     return (__crc == __crc0);
-    return 0;
 }
 
 
@@ -121,73 +126,79 @@ void CAN_Controller::set_speed_20(unsigned long speed_20) {
     set_speed_fd(speed_20, 4000000);
 }
 
-
+/*
 void CAN_Controller::strProcess(int num) {
 
-    if(dtaLen >= num)
-    {
+    if(nRecInBuf >= num) {
         unsigned char __str[500];
-        memcpy(__str, dtaCan, dtaLen);
-        memcpy(dtaCan, &__str[num], dtaLen-num);
-        dtaLen = dtaLen-num;
+        memcpy(__str, recBuffer, nRecIndexWrite);
+        memcpy(recBuffer, &__str[num], nRecIndexWrite - num);
+        nRecIndexWrite = nRecIndexWrite - num;
     }
 }
-
+*/
 
 void CAN_Controller::checkData() {
 
     int __len = 0;
     unsigned char __dta[CAN_REC_BUF_SIZE];
-    int i=0;
 
-    for(i=0; i<dtaLen; i++)
-    {
-        if(dtaCan[0] != 0xAA)
+    for(int i=0; i<nRecIndexWrite; i++) {
+
+        if(recBuffer[0] != 0xAA)
         {
             strProcess(1);
         }
         else break;
     }
 
-    if(dtaLen>2)
-    {
-        if(dtaLen >= (dtaCan[1]+4))
-        {
-            __len = dtaLen;
-            memcpy(__dta, dtaCan, __len);
+    if(nRecIndexWrite>2) {
+
+        if(nRecIndexWrite >= (recBuffer[1] + 4)) {
+
+            __len = nRecIndexWrite;
+            memcpy(__dta, recBuffer, __len);
             strProcess(__len);
             dtaProcess(__len, __dta);
         }
     }
 }
 
+/*
+void CAN_Controller::resetRecBuf() {
+    nRecIndexWrite = 0;
+    memset(recBuffer, 0, sizeof(recBuffer));
+}
+*/
 
 void CAN_Controller::serialProcess() {
 
     if(uart->available()) {
-        Serial.printf("Can serialProcess %d avail\r\n", uart->available());
+        Serial.printf("CAN serialProcess %d avail\r\n", uart->available());
     }
 
-    if(dtaLen < sizeof(dtaCan)) {
-        while(uart->available())
-        {
-            if(dtaLen < sizeof(dtaCan)) {
-                dtaCan[dtaLen++] = (char) uart->read();
-            } else {
-                Serial.printf("CAN buffer overflow len=%d (while), cleared\r\n", dtaLen);
-                dtaLen = 0;
-                memset(dtaCan, 0, sizeof(dtaCan));
-            }
+    if(nRecInBuf < (CAN_REC_BUF_SIZE - uart->available())) {
+
+        while(uart->available()) {
+
+            char incomingChar = (char) uart->read(); 
+
+            nRecIndexWrite %= CAN_REC_BUF_SIZE;
+            recBuffer[nRecIndexWrite] = incomingChar;
+            
+            Serial.printf("CAN Added %c [%d, %Xh] Ix: %d\r\n", recBuffer[nRecIndexWrite], recBuffer[nRecIndexWrite], recBuffer[nRecIndexWrite], nRecIndexWrite);
+
+            nRecIndexWrite++;
+            nRecInBuf++;
         }
+
     } else {
-        dtaLen = 0;
-        memset(dtaCan, 0, sizeof(dtaCan));
-        Serial.printf("CAN buffer overflow len=%d, cleared\r\n", dtaLen);
+        Serial.printf("!!! CAN receive buffer FULL !!! writeIndex=%d, InBuf: %d\r\n", nRecIndexWrite, nRecInBuf);
     }
 }
 
 
-void CAN_Controller::dtaProcess(int len, unsigned char *dta){
+void CAN_Controller::dtaProcess(int len, unsigned char *dta) {
 
     int i=0;
     unsigned long tmp = 0;
@@ -195,7 +206,15 @@ void CAN_Controller::dtaProcess(int len, unsigned char *dta){
 
     if(__crc)
     {
-        Serial.println("get dta crc ok");
+        Serial.println("CAN: get dta crc ok");
+    }
+}
+
+
+void CAN_Controller::findNextMessage() {
+    for(; nRecInBuf && (recBuffer[nRecIndexRead] != 0xAA); nRecIndexRead++) {
+        nRecInBuf--;
+        Serial.printf("Skipped not AA, ixWr: %d, inBuf: %d\r\n", nRecIndexRead, nRecInBuf);
     }
 }
 
@@ -204,50 +223,93 @@ int CAN_Controller::read(unsigned long *id, unsigned char *ext, unsigned char *r
 
     serialProcess();
 
-    if(dtaLen == 0) {
+    if(!nRecInBuf) {
         return 0;
     }
 
-    int __len = 0;
-    unsigned char __dta[CAN_REC_BUF_SIZE];
-    int i=0;
+    // Found message start
+    findNextMessage();
 
-    for(i=0; i<dtaLen; i++)
-    {
-        if(dtaCan[0] != 0xAA)
-        {
-            strProcess(1);
-        }
-        else break;
+    if(!nRecInBuf) {
+        return 0;
     }
 
-    if(dtaLen>2)
-    {
-        if(dtaLen >= (dtaCan[1]+4))
-        {
-  
-            __len = dtaLen;
-            memcpy(__dta, dtaCan, __len);
+    if(nRecInBuf && recBuffer[nRecIndexRead] == 0xAA) {
+        Serial.printf("AA found, ixWr: %d, inBuf: %d\r\n", nRecIndexRead, nRecInBuf);
+    } else {
+        Serial.printf("Message start (AA) not found, ixWr: %d, inBuf: %d\r\n", nRecIndexRead, nRecInBuf);
+    }
+   
+    if(nRecInBuf > 2) {
 
-            strProcess(__len);
-  
-            int __crc = checkCRC(__dta);
-            if(__crc)
-            {
-                *id = char2long(&__dta[3]);
-                *ext = __dta[7];
-                *rtr = __dta[8];
-                *fdf = __dta[9];
-                *len = __dta[10];
-                
-                for(int i=0; i<*len; i++)
-                {
-                    dta[i] = __dta[11+i];
-                }
-                return 1;
-            }
-            else return 0;
+        uint8_t nMsgLength = recBuffer[((nRecIndexRead + 1) % CAN_REC_BUF_SIZE)];
+
+        Serial.printf("Msg length: %d\r\n", nMsgLength);
+
+        if(((nMsgLength + 4) >= CAN_REC_BUF_SIZE)) {
+            Serial.printf("CAN: Msg length is bigger than buffer: %d/%d\r\n", nMsgLength + 4, CAN_REC_BUF_SIZE);
+            return 0;
         }
+
+        if(nRecInBuf < (nMsgLength + 4)) {
+            Serial.printf("CAN: Invalid msg length inside: %d\r\n", nMsgLength + 4);
+            return 0;
+        }
+
+        unsigned char __dta[CAN_REC_BUF_SIZE];
+        
+        for(uint8_t ix=0; ix < nMsgLength + 4; ix++) {
+
+            nRecIndexRead %= CAN_REC_BUF_SIZE;
+            __dta[ix] = recBuffer[nRecIndexRead];
+
+            Serial.printf("%d ", __dta[ix]);
+
+            nRecIndexRead++;
+            nRecInBuf--;
+
+            if(!nRecInBuf) {
+                break;
+            }
+        }
+
+        Serial.println();
+
+        //strProcess(nMsgLength);
+
+        int __crc = checkCRC(__dta);
+
+        Serial.printf("CRC check...%d\r\n", __crc);
+
+        if(__crc) {
+
+            Serial.println("CAN: CRC OK, parsing...");
+
+            *id = char2long(&__dta[3]);
+            *ext = __dta[7];
+            *rtr = __dta[8];
+            *fdf = __dta[9];
+            *len = __dta[10];
+            
+            for(int i=0; i < *len; i++) {
+                dta[i] = __dta[11 + i];
+            }
+
+            // Reset message buffer
+            memset(__dta, 0, sizeof(__dta));
+
+            return 1;
+        }
+        else {
+            Serial.println("CAN: BAD CRC");
+
+            // Reset message buffer
+            memset(__dta, 0, sizeof(__dta));
+
+            return 0;
+        }
+    } else {
+        Serial.println("CAN: Msg size is shorter than minimum");
     }
     
     return 0;
