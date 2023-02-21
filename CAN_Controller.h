@@ -6,6 +6,16 @@
 
 #define CAN_REC_BUF_SIZE    200
 
+struct CAN_MESSAGE_CONTROL {
+    unsigned long m_nId;
+    unsigned char m_nExt;
+    unsigned char m_nRtr;
+    unsigned char m_nFdf;
+    unsigned char m_nLen;
+    unsigned char m_nDta;
+};
+
+
 class CAN_Controller {
     private:
         SERIAL_LIB* uart;
@@ -31,17 +41,6 @@ class CAN_Controller {
         void resetRecBuf();
 
     public:
-        /*
-        struct CAN_MESSAGE {
-            unsigned long m_nId;
-            unsigned char m_nExt;
-            unsigned char m_nRtr;
-            unsigned char m_nFdf;
-            unsigned char m_nLen;
-            unsigned char m_nDta;
-        } CAN_MESSAGE;
-        */
-
         CAN_Controller(HardwareSerial* _uart);
         ~CAN_Controller();
 
@@ -49,7 +48,10 @@ class CAN_Controller {
         void set_speed_fd(unsigned long speed_20, unsigned long speed_fd);
         void set_speed_20(unsigned long speed_20);
         void send(unsigned long id, unsigned char ext, unsigned char rtr, unsigned char fdf, unsigned char len, unsigned char *dta);
-        int read(unsigned long *id, unsigned char *ext, unsigned char *rtr, unsigned char *fdf, unsigned char *len, unsigned char *dta);
+
+        // unsigned long *id, unsigned char *ext, unsigned char *rtr, unsigned char *fdf, unsigned char *len
+        int read(CAN_MESSAGE_CONTROL* structControlData, unsigned char *dta);
+
         void set_mask_filt(unsigned char num, unsigned char ext, unsigned long mask, unsigned long filt);
         void set_baudrate(unsigned long __baud);
 

@@ -218,8 +218,8 @@ void CAN_Controller::findNextMessage() {
     }
 }
 
-
-int CAN_Controller::read(unsigned long *id, unsigned char *ext, unsigned char *rtr, unsigned char *fdf, unsigned char *len, unsigned char *dta) {
+// unsigned long *id, unsigned char *ext, unsigned char *rtr, unsigned char *fdf, unsigned char *len
+int CAN_Controller::read(CAN_MESSAGE_CONTROL* structControlData, unsigned char *dta) {
 
     serialProcess();
 
@@ -285,13 +285,13 @@ int CAN_Controller::read(unsigned long *id, unsigned char *ext, unsigned char *r
 
             Serial.println("CAN: CRC OK, parsing...");
 
-            *id = char2long(&__dta[3]);
-            *ext = __dta[7];
-            *rtr = __dta[8];
-            *fdf = __dta[9];
-            *len = __dta[10];
+            structControlData->m_nId = char2long(&__dta[3]);
+            structControlData->m_nExt = __dta[7];
+            structControlData->m_nRtr = __dta[8];
+            structControlData->m_nFdf = __dta[9];
+            structControlData->m_nLen = __dta[10];
             
-            for(int i=0; i < *len; i++) {
+            for(int i=0; i < structControlData->m_nLen; i++) {
                 dta[i] = __dta[11 + i];
             }
 
