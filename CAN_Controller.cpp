@@ -57,8 +57,7 @@ unsigned int CAN_Controller::calCRC(unsigned char *str) {
     unsigned int __crc = 0xffff;
     int i=0;
 
-    for(i=0; i < str[1]; i++)
-    {
+    for(i=0; i < str[1]; i++) {
         __crc = CrcCalculate(str[i+2], __crc);
     }
     return __crc;
@@ -75,30 +74,36 @@ unsigned char CAN_Controller::checkCRC(unsigned char *str) {
     return (__crc == __crc0);
 }
 
-
-void CAN_Controller::send(unsigned long id, unsigned char ext, unsigned char rtr, unsigned char fdf, unsigned char len, unsigned char *dta) {
+// unsigned long id, unsigned char ext, unsigned char rtr, unsigned char fdf, unsigned char len
+void CAN_Controller::send(CAN_MESSAGE_CONTROL* msgControl, unsigned char *dta) {
     unsigned char str[80];
+
     str[0] = 0xAA;
-    str[1] = len+9;
+    str[1] = msgControl->m_nLen + 9;
     str[2] = 0x01;
-    long2char(id, &str[3]);
-    str[7] = ext;
-    str[8] = rtr;
-    str[9] = fdf;
-    str[10] = len;
-    for(int i=0; i<len; i++)
+    long2char(msgControl->m_nId, &str[3]);
+    str[7] = msgControl->m_nExt;
+    str[8] = msgControl->m_nRtr;
+    str[9] = msgControl->m_nFdf;
+    str[10] = msgControl->m_nLen;
+    for(int i=0; i < msgControl->m_nLen; i++)
     {
         str[11+i] = dta[i];
     }
 
     unsigned int crc = calCRC(str);
-    str[11+len] = crc & 0xff;
-    str[12+len] = (crc>>8) & 0xff;
+    str[11 + msgControl->m_nLen] = crc & 0xff;
+    str[12 + msgControl->m_nLen] = (crc>>8) & 0xff;
 
-    for(int i=0; i<(13+len); i++)
-    {
+    Serial.println("SND RAW:");
+
+    for(int i=0; i < (13 + msgControl->m_nLen); i++) {
         uart->write(str[i]);
+
+        Serial.printf("%d ", str[i]);
     }
+
+    Serial.println();
 }
 
 
@@ -126,18 +131,8 @@ void CAN_Controller::set_speed_20(unsigned long speed_20) {
     set_speed_fd(speed_20, 4000000);
 }
 
+
 /*
-void CAN_Controller::strProcess(int num) {
-
-    if(nRecInBuf >= num) {
-        unsigned char __str[500];
-        memcpy(__str, recBuffer, nRecIndexWrite);
-        memcpy(recBuffer, &__str[num], nRecIndexWrite - num);
-        nRecIndexWrite = nRecIndexWrite - num;
-    }
-}
-*/
-
 void CAN_Controller::checkData() {
 
     int __len = 0;
@@ -163,6 +158,8 @@ void CAN_Controller::checkData() {
         }
     }
 }
+*/
+
 
 /*
 void CAN_Controller::resetRecBuf() {
@@ -275,11 +272,7 @@ int CAN_Controller::read(CAN_MESSAGE_CONTROL* structControlData, unsigned char *
 
         Serial.println();
 
-        //strProcess(nMsgLength);
-
         int __crc = checkCRC(__dta);
-
-        Serial.printf("CRC check...%d\r\n", __crc);
 
         if(__crc) {
 
@@ -317,12 +310,14 @@ int CAN_Controller::read(CAN_MESSAGE_CONTROL* structControlData, unsigned char *
 
 
 void CAN_Controller::set_mask_filt(unsigned char num, unsigned char ext, unsigned long mask, unsigned long filt) {
-    if(num > 3)return;
+    if(num > 3) {
+        return;
+    }
     
     unsigned char str[15];
     str[0] = 0xAA;
     str[1] = 11;
-    str[2] = 0x03+num;
+    str[2] = 0x03 + num;
     str[3] = 1;
     str[4] = ext;
    

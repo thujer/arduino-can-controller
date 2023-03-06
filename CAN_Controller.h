@@ -47,7 +47,9 @@ class CAN_Controller {
         void init(unsigned long baud, int8_t rxPin = -1, int8_t txPin = -1);
         void set_speed_fd(unsigned long speed_20, unsigned long speed_fd);
         void set_speed_20(unsigned long speed_20);
-        void send(unsigned long id, unsigned char ext, unsigned char rtr, unsigned char fdf, unsigned char len, unsigned char *dta);
+
+        // unsigned long id, unsigned char ext, unsigned char rtr, unsigned char fdf, unsigned char len
+        void send(CAN_MESSAGE_CONTROL* msgControl, unsigned char *dta);
 
         // unsigned long *id, unsigned char *ext, unsigned char *rtr, unsigned char *fdf, unsigned char *len
         int read(CAN_MESSAGE_CONTROL* structControlData, unsigned char *dta);
