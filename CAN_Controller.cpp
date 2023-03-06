@@ -245,11 +245,21 @@ int CAN_Controller::read(CAN_MESSAGE_CONTROL* structControlData, unsigned char *
 
         if(((nMsgLength + 4) >= CAN_REC_BUF_SIZE)) {
             Serial.printf("CAN: Msg length is bigger than buffer: %d/%d\r\n", nMsgLength + 4, CAN_REC_BUF_SIZE);
+
+            // Skip char
+            nRecIndexRead ++;
+            nRecInBuf--;    
+
             return 0;
         }
 
         if(nRecInBuf < (nMsgLength + 4)) {
             Serial.printf("CAN: Invalid msg length inside: %d\r\n", nMsgLength + 4);
+
+            // Skip char
+            nRecIndexRead ++;
+            nRecInBuf--;    
+
             return 0;
         }
 
@@ -303,6 +313,10 @@ int CAN_Controller::read(CAN_MESSAGE_CONTROL* structControlData, unsigned char *
         }
     } else {
         Serial.println("CAN: Msg size is shorter than minimum");
+
+        // Skip char
+        nRecIndexRead ++;
+        nRecInBuf--;    
     }
     
     return 0;
